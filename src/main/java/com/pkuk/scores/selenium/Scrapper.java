@@ -27,20 +27,25 @@ public class Scrapper {
         driver = new ChromeDriver(options);
     }
 
-    public void scrapData() {
+    public List<WebsiteDto> scrapData() {
         driver.get(MINUT90_URL);
 
         String pageSource = driver.getPageSource();
         Document doc = Jsoup.parse(pageSource);
 
         List list = doc.getElementsByTag("b").eachText();
-        list.removeIf(value -> value.equals("Pauza:"));
-        list.removeIf(value -> value.toString().contains("Kolejka"));
+
+        Object firstPauseTeam = list.stream().filter(a -> a.toString().contains("Pauza")).findFirst().get();
+        int pauseTeamIndex = list.indexOf(firstPauseTeam);
+
+        // usuwam wszystkie indexy listy od poczatku do pierwszej wzmianki o pauzie, pozniej same wystapienia pauzy
+        list.subList(0, pauseTeamIndex).clear();
+        list.removeIf(value -> value.toString().contains("Pauza"));
 
         List<Object> matchList = new ArrayList<>(3);
         List<WebsiteDto> finalResult = new ArrayList<>();
 
-        for(Object element : list.subList(92, list.size())) {
+        for(Object element : list) {
             matchList.add(element);
 
             if (matchList.size() == 3) {
@@ -55,6 +60,7 @@ public class Scrapper {
         }
 
         log.info("final result: " + finalResult);
+        return finalResult;
     }
 
     public void closeBrowser() {
