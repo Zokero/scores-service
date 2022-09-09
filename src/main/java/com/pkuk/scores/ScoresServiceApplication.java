@@ -1,26 +1,15 @@
 package com.pkuk.scores;
 
-import com.pkuk.scores.domain.scrapper.LzpnScrapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableAutoConfiguration
-public class ScoresServiceApplication implements CommandLineRunner {
+@EnableScheduling
+public class ScoresServiceApplication {
 
-	@Autowired
-    LzpnScrapper lzpnScrapper;
+    public static void main(String[] args) {
+        SpringApplication.run(ScoresServiceApplication.class, args);
+    }
 
-	public static void main(String[] args) {
-		SpringApplication.run(ScoresServiceApplication.class, args);
-
-	}
-
-	@Override
-	public void run(String... args) {
-		lzpnScrapper.scrapp();
-	}
 }

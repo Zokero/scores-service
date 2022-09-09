@@ -2,6 +2,7 @@ package com.pkuk.scores.domain.scrapper;
 
 import com.pkuk.scores.domain.model.Match;
 import com.pkuk.scores.domain.model.Round;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -9,11 +10,8 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -26,30 +24,23 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
+@Slf4j
 public class LzpnScrapper {
 
-    private final String HEADLESS = "--headless";
-    private final String URL = "https://lzpn.org/terminarze-i-tabele/#48506";
-    private final ChromeOptions chromeOptions = new ChromeOptions();
-    private final DateTimeFormatter roundDateformatter = DateTimeFormatter.ofPattern("dd.M.yyyy");
-    private final DateTimeFormatter matchDateformatter = DateTimeFormatter.ofPattern("dd.M.yyyy HH:mm");
+    private final DateTimeFormatter roundDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy");
+    private final DateTimeFormatter matchDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy HH:mm");
     private final Pattern localDateFormatter = Pattern.compile("([0-9]{2}).([0-9]{2}).([0-9]{4})");
-    private final Pattern localDateTimeFormatter = Pattern.compile("([1-9]|([012][0-9])|(3[01])).([0]{0,1}[1-9]|1[012]).\\d\\d\\d\\d [012]{0,1}[0-9]:[0-6][0-9]");
+    private final Pattern localDateTimeFormatter = Pattern.compile("([1-9]|([012][0-9])|(3[01])).(0?[1-9]|1[012]).\\d\\d\\d\\d [012]?[0-9]:[0-6][0-9]");
 
-    public void scrapp() {
-        System.setProperty("webdriver.chrome.driver", "src/main/resources/drivers/chromedriver.exe");
-        chromeOptions.addArguments(HEADLESS);
-        WebDriver chromeDriver = new ChromeDriver(chromeOptions);
-        chromeDriver.get(URL);
-        WebElement roundsRoot = new WebDriverWait(chromeDriver, Duration.ofSeconds(8))
+    public void scrap(String scrapSourceUrl, WebDriver driver) {
+        log.info(this.getClass().getSimpleName() + " started");
+        driver.get(scrapSourceUrl);
+        WebElement roundsRoot = new WebDriverWait(driver, Duration.ofSeconds(8))
                 .until(ExpectedConditions.visibilityOfElementLocated(
                         By.xpath("//div[@class='results-screen league-results__slider slider league-results--all']")));
         Document rootDocument = Jsoup.parse(roundsRoot.getAttribute("innerHTML"));
-        chromeDriver.close();
-        chromeDriver.quit();
-
         process(rootDocument);
+        log.info(this.getClass().getSimpleName() + " stopped");
     }
 
     private void process(Document rootDocument) {
@@ -58,9 +49,10 @@ public class LzpnScrapper {
             Element headerElement = round.firstElementChild();
             Elements matchElements = round.getElementsByClass("results-screen__table-row cf");
             Round roundObj = new Round();
+            assert headerElement != null;
             createRoundNumber(headerElement.getElementsByTag("h5").text(), roundObj);
             createRoundDate(headerElement.getElementsByTag("span").text(), roundObj);
-            System.out.println(roundObj);
+            log.info(roundObj.toString());
             processMatches(matchElements, roundObj.getNumber());
         }
     }
@@ -73,7 +65,7 @@ public class LzpnScrapper {
                     .map(Element::text).toList();
             createMatchInfo(matchObj, span);
             createMatchResult(matchObj, span);
-            System.out.println(matchObj);
+            log.info(matchObj.toString());
         }
     }
 
@@ -88,8 +80,8 @@ public class LzpnScrapper {
         }
     }
 
-    private void createMatchResult(Match matchObj, List<String> resutl) {
-        List<String> split = Arrays.stream(resutl.get(1).split(":"))
+    private void createMatchResult(Match matchObj, List<String> result) {
+        List<String> split = Arrays.stream(result.get(1).split(":"))
                 .map(String::strip)
                 .toList();
         if (!split.isEmpty()) {
@@ -110,7 +102,7 @@ public class LzpnScrapper {
         Matcher matcher = localDateFormatter.matcher(dateCandidate);
         List<LocalDate> dateList = new ArrayList<>();
         while (matcher.find()) {
-            dateList.add(LocalDate.parse(matcher.group(), roundDateformatter));
+            dateList.add(LocalDate.parse(matcher.group(), roundDateFormatter));
         }
         round.setStartDate(dateList.get(0));
         round.setEndDate(dateList.get(1));
@@ -120,9 +112,9 @@ public class LzpnScrapper {
         Matcher localDateTimeMatcher = localDateTimeFormatter.matcher(dateCandidate);
         Matcher localDateMatcher = localDateFormatter.matcher(dateCandidate);
         if(localDateTimeMatcher.find()){
-            match.setMatchDate(LocalDateTime.parse(localDateTimeMatcher.group(), matchDateformatter));
+            match.setMatchDate(LocalDateTime.parse(localDateTimeMatcher.group(), matchDateFormatter));
         }else if(localDateMatcher.find()){
-            match.setMatchDate(LocalDateTime.of(LocalDate.parse(localDateMatcher.group(), roundDateformatter), LocalTime.MIDNIGHT));
+            match.setMatchDate(LocalDateTime.of(LocalDate.parse(localDateMatcher.group(), roundDateFormatter), LocalTime.MIDNIGHT));
         }
     }
 }
