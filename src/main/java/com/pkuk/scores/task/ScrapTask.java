@@ -19,17 +19,10 @@ public class ScrapTask {
     }
 
     @Scheduled(fixedDelay = 15000)
-    public void scrapLzpn() {
+    public void getMatchInfo() {
         log.info("............Running task................");
         ChromeDriver driver = initChromeDriver();
         lzpnScrapper.scrap(Urls.LZPN_URL, driver);
-        driver.quit();
-    }
-
-    @Scheduled(fixedDelay = 15000)
-    public void scrap90Minut() {
-        log.info("............Running task................");
-        ChromeDriver driver = initChromeDriver();
         minut90Scrapper.scrap(Urls.MINUT90_URL, driver);
         driver.quit();
     }
