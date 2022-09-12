@@ -2,6 +2,8 @@ package com.pkuk.scores.domain.scrapper;
 
 import com.pkuk.scores.domain.model.Match;
 import com.pkuk.scores.domain.model.Round;
+import com.pkuk.scores.domain.model.Score;
+import com.pkuk.scores.domain.model.Teams;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class LzpnScrapper {
+public class LzpnScrapper implements Scrap {
 
     private final DateTimeFormatter roundDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy");
     private final DateTimeFormatter matchDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy HH:mm");
@@ -70,8 +72,11 @@ public class LzpnScrapper {
     }
 
     private void createMatchInfo(Match matchObj, List<String> span) {
-        matchObj.setHostName(span.get(0));
-        matchObj.setGuestName(span.get(2));
+        Teams teams = new Teams();
+        teams.setHostName(span.get(0));
+        teams.setGuestName(span.get(2));
+
+        matchObj.setTeams(teams);
         createMatchDate(span.get(3), matchObj);
         if (span.size() == 5) {
             matchObj.setAddress(span.get(4));
@@ -84,13 +89,16 @@ public class LzpnScrapper {
         List<String> split = Arrays.stream(result.get(1).split(":"))
                 .map(String::strip)
                 .toList();
+        Score score = new Score();
+
         if (!split.isEmpty()) {
-            matchObj.setHostGoals(split.get(0));
-            matchObj.setGuestGoals(split.get(1));
+            score.setHostScore(split.get(0));
+            score.setGuestScore(split.get(1));
         } else {
-            matchObj.setHostGoals("");
-            matchObj.setGuestGoals("");
+            score.setHostScore("");
+            score.setGuestScore("");
         }
+        matchObj.setScore(score);
     }
 
     private void createRoundNumber(String roundNumber, Round round) {
