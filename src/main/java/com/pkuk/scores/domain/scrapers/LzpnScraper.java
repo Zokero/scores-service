@@ -1,7 +1,7 @@
-package com.pkuk.scores.domain.scrapper;
+package com.pkuk.scores.domain.scrapers;
 
-import com.pkuk.scores.domain.model.Match;
-import com.pkuk.scores.domain.model.Round;
+import com.pkuk.scores.domain.match.Match;
+import com.pkuk.scores.domain.round.Round;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,25 +25,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class LzpnScrapper implements Scrap {
+public class LzpnScraper implements Scrap {
 
     private final DateTimeFormatter roundDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy");
     private final DateTimeFormatter matchDateFormatter = DateTimeFormatter.ofPattern("dd.M.yyyy HH:mm");
-    private final Pattern localDateFormatter = Pattern.compile("([0-9]{2}).([0-9]{2}).([0-9]{4})");
-    private final Pattern localDateTimeFormatter = Pattern.compile("([1-9]|([012][0-9])|(3[01])).(0?[1-9]|1[012]).\\d\\d\\d\\d [012]?[0-9]:[0-6][0-9]");
+    private final Pattern localDatePattern = Pattern.compile("([0-9]{2}).([0-9]{2}).([0-9]{4})");
+    private final Pattern localDateTimePattern = Pattern.compile("([1-9]|([012][0-9])|(3[01])).(0?[1-9]|1[012]).\\d\\d\\d\\d [012]?[0-9]:[0-6][0-9]");
 
-    public void scrap(String scrapSourceUrl, WebDriver driver) {
+    public List<Match> scrap(String scrapSourceUrl, WebDriver driver) {
         log.info(this.getClass().getSimpleName() + " started");
         driver.get(scrapSourceUrl);
         WebElement roundsRoot = new WebDriverWait(driver, Duration.ofSeconds(8))
                 .until(ExpectedConditions.visibilityOfElementLocated(
                         By.xpath("//div[@class='results-screen league-results__slider slider league-results--all']")));
         Document rootDocument = Jsoup.parse(roundsRoot.getAttribute("innerHTML"));
-        process(rootDocument);
         log.info(this.getClass().getSimpleName() + " stopped");
+        return process(rootDocument);
     }
 
-    private void process(Document rootDocument) {
+    private List<Match> process(Document rootDocument) {
+        List<Match> matchList = new ArrayList<>();
         Elements roundElements = rootDocument.selectXpath("//div[@class='results-screen__table league-results__item slider-item']");
         for (Element round : roundElements) {
             Element headerElement = round.firstElementChild();
@@ -53,11 +54,12 @@ public class LzpnScrapper implements Scrap {
             createRoundNumber(headerElement.getElementsByTag("h5").text(), roundObj);
             createRoundDate(headerElement.getElementsByTag("span").text(), roundObj);
             log.info(roundObj.toString());
-            processMatches(matchElements, roundObj.getNumber());
+            processMatches(matchElements, roundObj.getNumber(), matchList);
         }
+        return matchList;
     }
 
-    private void processMatches(Elements matchElements, int roundNumber) {
+    private void processMatches(Elements matchElements, int roundNumber, List<Match> matchList) {
         for (Element game : matchElements) {
             Match matchObj = new Match();
             matchObj.setRound(roundNumber);
@@ -65,7 +67,7 @@ public class LzpnScrapper implements Scrap {
                     .map(Element::text).toList();
             createMatchInfo(matchObj, span);
             createMatchResult(matchObj, span);
-            log.info(matchObj.toString());
+            matchList.add(matchObj);
         }
     }
 
@@ -100,8 +102,8 @@ public class LzpnScrapper implements Scrap {
                 Integer.parseInt(roundNumber.substring(roundNumber.indexOf(" ")).trim()));
     }
 
-    public void createRoundDate(String dateCandidate, Round round) {
-        Matcher matcher = localDateFormatter.matcher(dateCandidate);
+    private void createRoundDate(String dateCandidate, Round round) {
+        Matcher matcher = localDatePattern.matcher(dateCandidate);
         List<LocalDate> dateList = new ArrayList<>();
         while (matcher.find()) {
             dateList.add(LocalDate.parse(matcher.group(), roundDateFormatter));
@@ -110,12 +112,12 @@ public class LzpnScrapper implements Scrap {
         round.setEndDate(dateList.get(1));
     }
 
-    public void createMatchDate(String dateCandidate, Match match) {
-        Matcher localDateTimeMatcher = localDateTimeFormatter.matcher(dateCandidate);
-        Matcher localDateMatcher = localDateFormatter.matcher(dateCandidate);
-        if(localDateTimeMatcher.find()){
+    private void createMatchDate(String dateCandidate, Match match) {
+        Matcher localDateTimeMatcher = localDateTimePattern.matcher(dateCandidate);
+        Matcher localDateMatcher = localDatePattern.matcher(dateCandidate);
+        if (localDateTimeMatcher.find()) {
             match.setMatchDate(LocalDateTime.parse(localDateTimeMatcher.group(), matchDateFormatter));
-        }else if(localDateMatcher.find()){
+        } else if (localDateMatcher.find()) {
             match.setMatchDate(LocalDateTime.of(LocalDate.parse(localDateMatcher.group(), roundDateFormatter), LocalTime.MIDNIGHT));
         }
     }

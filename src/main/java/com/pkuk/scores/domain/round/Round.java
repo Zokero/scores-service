@@ -1,5 +1,6 @@
-package com.pkuk.scores.domain.model;
+package com.pkuk.scores.domain.round;
 
+import com.pkuk.scores.domain.match.Match;
 import lombok.Data;
 
 import java.time.LocalDate;
