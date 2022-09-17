@@ -1,6 +1,6 @@
-package com.pkuk.scores.domain.scrapper;
+package com.pkuk.scores.domain.scrapers;
 
-import com.pkuk.scores.domain.model.Match;
+import com.pkuk.scores.domain.match.Match;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,22 +10,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class Minut90Scrapper implements Scrap {
+public class Minut90Scraper implements Scrap {
 
-    public void scrap(String scrapSourceUrl, WebDriver driver) {
+    public List<Match> scrap(String scrapSourceUrl, WebDriver driver) {
         log.info(this.getClass().getSimpleName() + " started");
         driver.get(scrapSourceUrl);
 
         process(Jsoup.parse(driver.getPageSource()));
         log.info(this.getClass().getSimpleName() + " stopped");
+        return null;
     }
 
     private void process(Document rootDocument) {
-        List list = rootDocument.getElementsByTag("b").eachText();
+        List<String> list = rootDocument.getElementsByTag("b").eachText();
 
         List<Object> matchList = new ArrayList<>(3);
 
-        for(Object element : filterList(list)) {
+        for (Object element : filterList(list)) {
             matchList.add(element);
 
             if (matchList.size() == 3) {
