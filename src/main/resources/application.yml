@@ -1,3 +1,18 @@
 spring:
-  profiles:
-    active: dev
+  #  profiles:
+  #    active: dev
+  config:
+    import: file:env.properties
+  datasource:
+    platform: postgres
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driverClassName: org.postgresql.Driver
+  jpa:
+    database: ${DB_DATABASE}
+    show-sql: true
+    properties:
+      hibernate:
+        ddl-auto: update
+        generate_statistics: false

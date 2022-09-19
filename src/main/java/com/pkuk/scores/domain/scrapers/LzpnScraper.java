@@ -39,6 +39,7 @@ public class LzpnScraper implements Scrap {
                 .until(ExpectedConditions.visibilityOfElementLocated(
                         By.xpath("//div[@class='results-screen league-results__slider slider league-results--all']")));
         Document rootDocument = Jsoup.parse(roundsRoot.getAttribute("innerHTML"));
+        driver.quit();
         log.info(this.getClass().getSimpleName() + " stopped");
         return process(rootDocument);
     }

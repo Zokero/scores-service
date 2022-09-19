@@ -13,11 +13,11 @@ import java.util.Objects;
 @Getter
 @Entity
 @ToString
-@Table
+@Table(name = "matches")
 public class Match {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
     private String hostName;
     private String guestName;

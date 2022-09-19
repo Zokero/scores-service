@@ -56,6 +56,6 @@ public class Minut90Scraper implements Scrap {
         match.setHostScore(scores[0]);
         match.setGuestScore(scores[1]);
 
-        log.info(match.toString());
+//        log.info(match.toString());
     }
 }
