@@ -5,14 +5,15 @@ spring:
     import: file:env.properties
   datasource:
     platform: postgres
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driverClassName: org.postgresql.Driver
   jpa:
     database: ${DB_DATABASE}
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        ddl-auto: update
+        hbm2ddl:
+          auto: create
         generate_statistics: false
